@@ -1,0 +1,33 @@
+ <!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>sqe-api</title>
+  </head>
+  <body>
+  <p>Nothing to see here.  Use the API instead.</p>
+  <input type="button" value="Increment Count" onclick="addCount()">
+  <p><span>Count: </span><span id="count">None</span></p>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.dev.js" integrity="sha256-pMea2a/7QK1RhYpSh7rIpKSajxu4j61VmpJCJ31KrfA=" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+        const socket = io()  
+        socket.on('show', function(msg){
+            console.log(msg)
+            document.getElementById('count').innerHTML = msg
+        })
+
+        const addCount = () => {
+            axios.get('/api/test')
+            .then(function (response) {
+                // handle success
+                console.log(response);
+            })
+            .catch(function (error) {
+                // handle error
+                console.log(error);
+            })
+        }
+    </script>
+  </body>
+</html>

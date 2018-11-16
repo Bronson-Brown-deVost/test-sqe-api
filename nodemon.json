@@ -1,0 +1,7 @@
+{   
+    "ignore": [
+        ".eslintrc.json",
+        "bin/*",
+        "package.json"
+    ] 
+}
