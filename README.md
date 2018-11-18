@@ -69,7 +69,7 @@ For this to work properly, in your new function, you must specify and return a `
 
 ## Database
 
-I setup a modules in the `(project root)/db` folder called `sqe-mariadb.js`.  Once it is loaded, it created a pool of database connections, which can be accessed via convenience functions.  Since requiring files in Node basically creates a singleton (see above), you can just require this file anywhere and you will get the already existing instance of it with the preloaded pool. It should be expanded if we continue in this direction.  I added a transaction handler for multiple queries that should be handled as part of a single transaction.  We would need something for prepared queries too.  Perhaps other conveniences.
+I setup a modules in the `(project root)/db` folder called `sqe-mariadb.js`, which uses the [official MariaDB Node.js connector](https://mariadb.com/kb/en/library/about-mariadb-connector-nodejs/).  Once it is loaded, it created a pool of database connections, which can be accessed via convenience functions.  Since requiring files in Node basically creates a singleton (see above), you can just require this file anywhere and you will get the already existing instance of it with the preloaded pool. It should be expanded if we continue in this direction.  I added a transaction handler for multiple queries that should be handled as part of a single transaction.  We would need something for prepared queries too.  Perhaps other conveniences.
 
 ## Controllers
 
@@ -86,3 +86,127 @@ You can use `yarn dev` to start the API at PORT 3030, or whatever you set in `co
 ## Extending
 
 I guess this API would eventually be placed behind a load balancer.  It is in principal stateless, so you could spin up as many instances as desireble depending on load.  Websockets can horizontally scale with something a central pub/sub like https://github.com/socketio/socket.io-redis (or maybe they make a Kafka connector to do the same thing).  If we need to scale the DB, that can be done as well with slaves.  The API simply sits in the middle.
+
+## Coding style
+
+Express has been around for a long time now, and uses the traditional callbacks and Javascript style.  In this API, I tend to use arrow functions and async/await to make the logic easier to understand and to fall in line with more modern styles (I use `const` and `let` instead of `var` as well).
+
+### Arrow function
+
+There are several ways to define functions in Javascript these days.  I tend to prefer the arrow functions, since it tends to automatically preserve scope (and bind to `this`) in the way you would expect.
+
+```Javascript
+function() {
+    console.log(this.coolMessage)
+}.bind(this))
+```
+
+is equivalent to:
+
+```Javascript
+() => {
+  console.log(this.coolMessage)
+}
+```
+
+This is very helpful when you need to nest callbacks and would otherwise descend into [callback hell](http://callbackhell.com/).
+
+You can use this when declaring functions or when creating callbacks:
+
+```Javascript
+const myCoolFunction = (var1, var2) => {
+  return var1 + var2
+}
+
+const someObject = {
+  var1: 1,
+  var2: 2,
+  customAdd: (a, b) => {
+    return a + b
+  },
+  doSomethingMore: (a, b, cb) => {
+    return cb(a, b, a + b)
+  }
+}
+
+console.log(`A simple function returns: ${myCoolFunction(5, 8)}`)
+
+someObject.doSomethingMore(2, 4, (a, b, sum) => {
+  console.log(`The sum of ${a} and ${b} is ${sum}`)
+})
+```
+
+### Async
+
+One of the big benefits of Javascript is its first-class suport for asynchronous operations.  This was initially achieved with callbacks, later updated with Promises, then transitioned to async/await.  The following three examples do basically the same thing:
+
+#### Callback
+
+```Javascript
+function longRunningFunc(message, cb) {
+  setTimeout(function() {cb(message)}, 3000)
+}
+
+// This starts a task, but doesn't block the rest of the code from running
+longRunningFunc('I took a long time to finish.', function(result) {
+  console.log(result)
+})
+
+console.log('I didn\'t get blocked from running!')
+```
+
+#### Promise
+
+Note how much easier error handling is.
+
+```Javascript
+function longRunningFunc(message) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (1 !== 1) {
+        reject('The world makes no sense anymore.')
+      } else {
+        resolve(message)
+      }
+    }, 3000)
+  }) 
+}
+
+// This starts a task, but doesn't block the rest of the code from running
+longRunningFunc('I took a long time to finish.')
+  .then((message) => {
+    console.log(message)
+  })
+  .catch(error => console.error(error))   // Here is a really shorthand way to write an arrow function
+                                          // It only works with one variable and one statement.
+
+console.log('I didn\'t get blocked from running!')
+```
+
+#### Async/await
+
+The try/catch syntax is more similar to other languages.  You can only use `await` inside of an `async` function.  You can fire up as many `await`able functions as you want to run cuncurrently, then you can `await` them in any order, or all at once with Promise.all.
+
+```Javascript
+const longRunningFunc = (message) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (1 !== 1) {
+        reject('The world makes no sense anymore.')
+      } else {
+        resolve(message)
+      }
+    }, 3000)
+  }) 
+}
+
+(async () => {
+  try {
+    const msg = longRunningFunc('I took a long time to finish.') // This starts a task, but doesn't block the rest of the code from running
+    console.log('I didn\'t get blocked from running!')
+    console.log(await msg) // await tells our code to stop and wait for longRunningFunc to finish
+  } catch(error) {
+    console.error(error)
+  }
+})()
+```
