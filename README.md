@@ -1,6 +1,6 @@
 # Testing SQE API using express.js
 
-This testing server makes minimal usage of the features in Express.js, thus making transition of the working to some other framework less complicated (for instance if we want to support server side events in the future).
+This testing server makes minimal usage of the features in Express.js, thus making transition of the working to some other framework less complicated (for instance if we want to support server side events in the future).  The project was financed by the [Scripta Qumranica Electronica (SQE) project](https://qumranica.org) and provides an HTTP and websocket API targeted for the SQE database.  The framework may be of general interest, however, to anyone wishing to create abare-bones, "batteries not included" analogue to [Feathers.js](https://feathersjs.com/).
 
 ## Entry point
 
